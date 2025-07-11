@@ -26688,7 +26688,7 @@ components:
               items:
                   $ref: '#/components/schemas/NotificationStatus'
       required:
-          - resourceId
+        - resourceId
     ResendTransactionWebhooksRequest:
       type: object
       properties:
