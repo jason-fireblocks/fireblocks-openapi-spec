@@ -98,42 +98,36 @@
       }
     };
 
-    function extractSchemas(obj, schemas) {
-      if (!obj || typeof obj !== "object") return;
+    function extractSchemas(spec) {
+      var schemas = {};
+      var source = null;
       
-      if (obj["x-readme-ref-name"] && obj.properties) {
-        var name = obj["x-readme-ref-name"];
-        if (!schemas[name]) {
-          schemas[name] = {
-            name: name,
-            type: obj.type || "object",
-            description: obj.description || "",
-            properties: obj.properties || {},
-            required: obj.required || [],
-            enum: obj["enum"] || null
-          };
-        }
+      // OpenAPI 3.x: components.schemas
+      if (spec.components && spec.components.schemas) {
+        source = spec.components.schemas;
+      }
+      // Swagger 2.x: definitions
+      else if (spec.definitions) {
+        source = spec.definitions;
       }
       
-      if (obj["enum"] && obj["x-readme-ref-name"]) {
-        var enumName = obj["x-readme-ref-name"];
-        if (!schemas[enumName]) {
-          schemas[enumName] = {
-            name: enumName,
-            type: "string",
-            description: obj.description || "",
-            properties: {},
-            required: [],
-            enum: obj["enum"]
-          };
-        }
+      if (!source) return schemas;
+      
+      var names = Object.keys(source);
+      for (var i = 0; i < names.length; i++) {
+        var name = names[i];
+        var s = source[name];
+        schemas[name] = {
+          name: name,
+          type: s.type || "object",
+          description: s.description || "",
+          properties: s.properties || {},
+          required: s.required || [],
+          enum: s["enum"] || null
+        };
       }
       
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          extractSchemas(obj[key], schemas);
-        }
-      }
+      return schemas;
     }
 
     function loadSchemas() {
@@ -143,8 +137,7 @@
           return res.json();
         })
         .then(function(data) {
-          var schemas = {};
-          extractSchemas(data, schemas);
+          var schemas = extractSchemas(data);
           
           allSchemas = [];
           var names = Object.keys(schemas);
